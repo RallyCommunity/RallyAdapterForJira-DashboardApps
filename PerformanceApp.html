@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CATS-SLAM-0.1</title>
+    <!--  (c) 2017 CA Technologies.  All Rights Reserved. -->
+    <!--  Build Date: Wed Sep 23 2020 12:08:55 GMT-0600 (Mountain Daylight Time) -->
+
+    <script type="text/javascript">
+        var APP_BUILD_DATE = "Wed Sep 23 2020 12:08:55 GMT-0600 (Mountain Daylight Time)";
+        var ARTIFACT = "WIM-5528";
+        var BUILDER  = "kc683795";
+        var CHECKSUM = 9042320884;
+    </script>
+
+    <script type="text/javascript" src="/apps/2.1/sdk.js"></script>
+    <!-- our highcharts (needed so that we can add patterns)
+    <script type="text/javascript" src="/apps/2.1/lib/analytics/analytics-all.js"></script>
+    -->
+
+
+    <script type="text/javascript">
+        Rally.onReady(function() {
+            Ext.define("Rally.technicalservices.InfoLink",{extend:"Rally.ui.dialog.Dialog",alias:"widget.tsinfolink",informationHtml:null,title:"Build Information",defaults:{padding:5,margin:5},closable:!0,draggable:!0,autoShow:!0,width:350,informationalConfig:null,showLog:!1,logger:null,items:[{xtype:"container",itemId:"information"},{xtype:"container",itemId:"button_box"}],initComponent:function(){Ext.id(this);this.title="<span class='icon-help'> </span>"+this.title,this.callParent(arguments)},_generateChecksum:function(t){var e,o=305419896;for(t=(t=(t=t.replace(/var CHECKSUM = .*;/,"")).replace(/var BUILDER  = .*;/,"")).replace(/\s/g,""),e=0;e<t.length;e++)o+=t.charCodeAt(e)*e;return o},_checkChecksum:function(t){var o=Ext.create("Deft.Deferred"),i=this;return Ext.Ajax.request({url:document.URL,params:{id:1},success:function(t){if(text=t.responseText,CHECKSUM){var e=i._generateChecksum(text);if(CHECKSUM!==e)return void o.resolve(!1)}o.resolve(!0)}}),o.promise},_addToContainer:function(t){var e=Ext.apply({xtype:"container",height:200,overflowY:!0},this.informationalConfig);t.add(e)},afterRender:function(){var t=Rally.getApp();if(!Ext.isEmpty(this.informationalConfig)){var e=this.down("#information");this._addToContainer(e)}this.showLog&&this.logger&&this.down("#button_box").add({xtype:"rallybutton",text:"Show Log",listeners:{scope:this,click:function(){this.logger.displayLog()}}}),t.isExternal()?this.addDocked({xtype:"container",cls:"build-info",padding:2,dock:"bottom",html:"... Running externally"}):this._checkChecksum(t).then({scope:this,success:function(t){t||this.addDocked({xtype:"container",cls:"build-info",dock:"bottom",padding:2,html:'<span class="icon-warning"> </span>Checksums do not match'})},failure:function(t){console.log("oops:",t)}}),this.callParent(arguments)},beforeRender:function(){if(this.callParent(arguments),this.informationHtml&&this.addDocked({xtype:"component",componentCls:"intro-panel",padding:2,html:this.informationHtml,dock:"bottom"}),this.addDocked({xtype:"container",cls:"build-info",padding:2,dock:"bottom",html:"This app was created by the CA AC Technical Services Team."}),APP_BUILD_DATE){var t=Ext.String.format("Built on: {0} <br/>Built by: {1}",APP_BUILD_DATE,BUILDER);ARTIFACT&&(t=t+"<br/>Source artifact: "+ARTIFACT),this.addDocked({xtype:"container",cls:"build-info",padding:2,dock:"top",html:t})}}}),Ext.define("CArABU.technicalservices.Logger",{saveForLater:!1,saveLines:100,logArray:[],constructor:function(t){Ext.apply(this,t)},setSaveForLater:function(t){this.saveForLater=t},log:function(t){var e="[ "+Ext.util.Format.date(new Date,"Y-m-d H:i:s.u")+" ]",o=[];o=Ext.Array.push(o,[e]),o=Ext.Array.push(o,Ext.Array.slice(arguments,0)),this.saveForLater&&(this.logArray||(this.logArray=[]),this.logArray.push(o.join(" ")),this.logArray.length>this.saveLines&&this.logArray.shift()),window.console&&console.log.apply(console,o)},getLogText:function(){return this.logArray&&0!==this.logArray.length?this.logArray.join("<br/>"):"-- no log --"},displayLog:function(){var t=this.getLogText();this.popup=Ext.create("Rally.ui.dialog.Dialog",{width:Ext.getBody().getWidth()-20,height:Ext.getBody().getHeight()-20,closable:!0,title:"Log",autoShow:!0,layout:"border",defaults:{layout:"fit",width:"50%",border:!1},items:[{region:"center",xtype:"container",html:t,autoScroll:!0}]})}}),Ext.define("TSUtilities",{singleton:!0,loadWsapiRecords:function(t){var i=Ext.create("Deft.Deferred");return Ext.create("Rally.data.wsapi.Store",Ext.Object.merge({model:"Defect",fetch:["ObjectID"]},t)).load({callback:function(t,e,o){o?i.resolve(t):(console.error("Failed: ",e),i.reject("Problem loading: "+e.error.errors.join(". ")))}}),i.promise},loadAStoreWithAPromise:function(t,e){var i=Ext.create("Deft.Deferred");return Ext.create("Rally.data.wsapi.Store",{model:t,fetch:e}).load({callback:function(t,e,o){o?i.resolve(this):(console.error("Failed: ",e),i.reject("Problem loading: "+e.error.errors.join(". ")))}}),i.promise}}),Ext.define("gl.app.lac.Base",{extend:"Rally.app.App",componentCls:"app",logger:new CArABU.technicalservices.Logger,defaults:{margin:10},integrationHeaders:{name:"CArABU.app.TSApp"},config:{defaultSettings:{authToken:"mylacauthtoken",host:"my.lac.server.com"},slamUrl:"/rest/default/orchestrator/v1/mys:vw_slam_summary"},showErrorMessage:function(t){Rally.ui.notify.Notifier.showError({message:t,allowHTML:!0})},showAppBanner:function(t){Rally.ui.notify.Notifier.show({message:t,allowHTML:!0,timeout:1e4})},showAppMessage:function(t,e){t.add({xtype:"container",html:Ext.String.format('<div class="no-data-container"><div class="secondary-message">{0}</div></div>',e)})},loadData:function(t){var e=this,o=Ext.create("Deft.Deferred"),i=new XMLHttpRequest;return i.open("GET",t),i.setRequestHeader("Authorization","CALiveAPICreator "+this.getAuthToken()+":1"),i.onreadystatechange=function(){200==this.status&&4==this.readyState&&(e.logger.log("_loadLACData.response: ",this.responseText),o.resolve(Ext.JSON.decode(this.responseText)))},i.send(),o.promise},putData:function(t,e){var o=this,i=Ext.create("Deft.Deferred"),a=JSON.stringify(e),n=new XMLHttpRequest;return n.open("PUT",t),n.setRequestHeader("Authorization","CALiveAPICreator "+this.getAuthToken()+":1"),n.setRequestHeader("Content-type","application/json; charset=utf-8"),n.onreadystatechange=function(){200==this.status&&4==this.readyState&&(o.logger.log("putData.response: ",this.responseText),i.resolve(Ext.JSON.decode(this.responseText)))},n.send(a),i.promise},getUrl:function(t){var e=this.config[t]||this.getSetting(t);return this.getHost()+e},getHost:function(){return"https://"+this.getSetting("host")},getAuthToken:function(){return this.getSetting("authToken")},getSettingsFields:function(){return[{name:"authToken",xtype:"rallytextfield",fieldLabel:"Auth Token",labelWidth:150,width:400},{name:"host",xtype:"rallytextfield",fieldLabel:"Host (without protocol)",labelWidth:150,width:400}]},getOptions:function(){return[{text:"About...",handler:this._launchInfo,scope:this}]},_launchInfo:function(){this.about_dialog&&this.about_dialog.destroy(),this.about_dialog=Ext.create("Rally.technicalservices.InfoLink",{showLog:this.getSetting("saveLog"),logger:this.logger})},isExternal:function(){return void 0===this.getAppId()}}),Ext.define("Rally.technicalservices.InfoLink",{extend:"Rally.ui.dialog.Dialog",alias:"widget.tsinfolink",informationHtml:null,title:"Build Information",defaults:{padding:5,margin:5},closable:!0,draggable:!0,autoShow:!0,width:350,informationalConfig:null,showLog:!1,logger:null,items:[{xtype:"container",itemId:"information"},{xtype:"container",itemId:"button_box"}],initComponent:function(){Ext.id(this);this.title="<span class='icon-help'> </span>"+this.title,this.callParent(arguments)},_generateChecksum:function(t){var e,o=305419896;for(t=(t=(t=t.replace(/var CHECKSUM = .*;/,"")).replace(/var BUILDER  = .*;/,"")).replace(/\s/g,""),e=0;e<t.length;e++)o+=t.charCodeAt(e)*e;return o},_checkChecksum:function(t){var o=Ext.create("Deft.Deferred"),i=this;return Ext.Ajax.request({url:document.URL,params:{id:1},success:function(t){if(text=t.responseText,CHECKSUM){var e=i._generateChecksum(text);if(CHECKSUM!==e)return void o.resolve(!1)}o.resolve(!0)}}),o.promise},_addToContainer:function(t){var e=Ext.apply({xtype:"container",height:200,overflowY:!0},this.informationalConfig);t.add(e)},afterRender:function(){var t=Rally.getApp();if(!Ext.isEmpty(this.informationalConfig)){var e=this.down("#information");this._addToContainer(e)}this.showLog&&this.logger&&this.down("#button_box").add({xtype:"rallybutton",text:"Show Log",listeners:{scope:this,click:function(){this.logger.displayLog()}}}),t.isExternal()?this.addDocked({xtype:"container",cls:"build-info",padding:2,dock:"bottom",html:"... Running externally"}):this._checkChecksum(t).then({scope:this,success:function(t){t||this.addDocked({xtype:"container",cls:"build-info",dock:"bottom",padding:2,html:'<span class="icon-warning"> </span>Checksums do not match'})},failure:function(t){console.log("oops:",t)}}),this.callParent(arguments)},beforeRender:function(){if(this.callParent(arguments),this.informationHtml&&this.addDocked({xtype:"component",componentCls:"intro-panel",padding:2,html:this.informationHtml,dock:"bottom"}),this.addDocked({xtype:"container",cls:"build-info",padding:2,dock:"bottom",html:"This app was created by the CA AC Technical Services Team."}),APP_BUILD_DATE){var t=Ext.String.format("Built on: {0} <br/>Built by: {1}",APP_BUILD_DATE,BUILDER);ARTIFACT&&(t=t+"<br/>Source artifact: "+ARTIFACT),this.addDocked({xtype:"container",cls:"build-info",padding:2,dock:"top",html:t})}}}),Ext.define("CArABU.technicalservices.Logger",{saveForLater:!1,saveLines:100,logArray:[],constructor:function(t){Ext.apply(this,t)},setSaveForLater:function(t){this.saveForLater=t},log:function(t){var e="[ "+Ext.util.Format.date(new Date,"Y-m-d H:i:s.u")+" ]",o=[];o=Ext.Array.push(o,[e]),o=Ext.Array.push(o,Ext.Array.slice(arguments,0)),this.saveForLater&&(this.logArray||(this.logArray=[]),this.logArray.push(o.join(" ")),this.logArray.length>this.saveLines&&this.logArray.shift()),window.console&&console.log.apply(console,o)},getLogText:function(){return this.logArray&&0!==this.logArray.length?this.logArray.join("<br/>"):"-- no log --"},displayLog:function(){var t=this.getLogText();this.popup=Ext.create("Rally.ui.dialog.Dialog",{width:Ext.getBody().getWidth()-20,height:Ext.getBody().getHeight()-20,closable:!0,title:"Log",autoShow:!0,layout:"border",defaults:{layout:"fit",width:"50%",border:!1},items:[{region:"center",xtype:"container",html:t,autoScroll:!0}]})}}),Ext.define("TSUtilities",{singleton:!0,loadWsapiRecords:function(t){var i=Ext.create("Deft.Deferred");return Ext.create("Rally.data.wsapi.Store",Ext.Object.merge({model:"Defect",fetch:["ObjectID"]},t)).load({callback:function(t,e,o){o?i.resolve(t):(console.error("Failed: ",e),i.reject("Problem loading: "+e.error.errors.join(". ")))}}),i.promise},loadAStoreWithAPromise:function(t,e){var i=Ext.create("Deft.Deferred");return Ext.create("Rally.data.wsapi.Store",{model:t,fetch:e}).load({callback:function(t,e,o){o?i.resolve(this):(console.error("Failed: ",e),i.reject("Problem loading: "+e.error.errors.join(". ")))}}),i.promise}}),Ext.define("gl.app.lac.performance.SLAM",{extend:"gl.app.lac.Base",componentCls:"app",logger:new CArABU.technicalservices.Logger,defaults:{margin:10},config:{slamUrl:"/rest/default/orchestrator/v1/mys:vw_slam_summary"},slamColors:{"more than 90 min":"#75110a","less than 90 min":"#a4180e","less than 60 min":"#d31f12","less than 20 min":"#ed382c","less than 10 min":"#f1655b","less than 5 min":"#f5918a","less than 3 min":"#f9bdb9","less than 2 min":"#fde9e8","less than 1 min":"#ffb3b3","less than 30 sec":"#FFE5CC","less than 15 sec":"#FFCC99","less than 5 sec":"#009900"},launch:function(){this.callParent(arguments),this._display()},_display:function(){this.setLoading("Loading SLA miss data...");var t=this;this.down("#displayBox")||this.add({xtype:"container",itemId:"displayBox"}),this.down("#displayBox").removeAll(),Deft.Promise.all([this.loadData(this.getUrl("slamUrl"))]).then({scope:this,success:this._buildVisual,failure:this.showErrorMessage}).always(function(){t.setLoading(!1)})},_buildVisual:function(t){var e=t&&t[0]||null;if(e&&0!==e.length){var i={},a=[],o=_.keys(this.slamColors);_.each(e,function(t){i[t.timebox]||(i[t.timebox]={}),_.contains(a,t.timebox)||a.push(t.timebox);var e=t.minute_bucket;i[t.timebox][e]=t.reaction_count}),a.reverse();var n=[];_.each(o,function(e){var o=[];_.each(a,function(t){o.push(i[t][e]||0)}),n.push({name:e,data:o,color:this.slamColors[e]})},this),this.down("#displayBox").add({xtype:"rallychart",loadMask:!1,chartColors:[],chartData:{series:n,categories:a},chartConfig:{chart:{type:"column"},title:{text:"Integration Wait Times"},xAxis:{},yAxis:{min:0,title:{text:"Percentage"},stackLabels:{enabled:!1}},legend:{align:"right",layout:"vertical",borderWidth:0,itemStyle:{color:"#444",fontFamily:"ProximaNova",textTransform:"uppercase"},shadow:!1,verticalAlign:"top"},tooltip:{backgroundColor:"#444",headerFormat:'<span style="display:block;margin:0;padding:0 0 2px 0;text-align:center"><b style="font-family:NotoSansBold;color:white;">{point.key}</b></span><table><tbody>',footerFormat:"</tbody></table>",pointFormat:'<tr><td class="tooltip-label"><span style="color:{series.color};width=100px;">{series.name}</span>: {point.y} ({point.percentage:.0f}%)</td></tr>',shared:!0,useHTML:!0,borderColor:"#444"},plotOptions:{column:{stacking:"percent"}}}})}else this.showAppMessage(this.down("#displayBox"),"No data to display")}});
+
+               Rally.launchApp('gl.app.lac.performance.SLAM', {
+                   name: 'SLAM'
+               });
+        });
+    </script>
+
+    <style type="text/css">
+
+.app {
+}
+.tsinfolink {
+    position:absolute;
+    right:0px;
+    width: 14px;
+    height: 14px;
+    border-radius: 7px;
+    text-align: center;
+    color: white;
+    background: #C0C0C0;
+    border-style: solid;
+    border-width: 1px;
+    margin-top: 25px;
+    margin-right: 5px;
+    cursor: pointer;
+}
+.highcharts-tooltip {
+    font-family:NotoSansBold;
+    color:white;
+}
+.tooltip-point {
+    text-align: right;
+    color: white;
+}
+.tooltip-label {
+    font-family:NotoSans;
+    white-space:nowrap;
+    font-size:13px;
+    color:white;
+}
+.etlDate {
+    color: grey;
+    font-family:NotoSans;
+    font-style: italic;
+}
+
+.app {
+}
+.tsinfolink {
+    position:absolute;
+    right:0px;
+    width: 14px;
+    height: 14px;
+    border-radius: 7px;
+    text-align: center;
+    color: white;
+    background: #C0C0C0;
+    border-style: solid;
+    border-width: 1px;
+    margin-top: 25px;
+    margin-right: 5px;
+    cursor: pointer;
+}
+    </style>
+
+</head>
+<body></body>
+</html>
